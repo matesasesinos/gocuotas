@@ -63,12 +63,33 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'title'       => 'Password API Comercio',
                 'type'        => 'password'
             ],
-            'show_cuotas' => [
-                'title'       => 'Mostrar cuotas en los productos',
+            'show_fees_category' => [
+                'title'       => 'Mostrar cuotas en las categoría de productos',
                 'label'       => 'Activar',
                 'type'        => 'checkbox',
                 'description' => '',
                 'default'     => 'no'
+            ],
+            'show_fees_product' => [
+                'title'       => 'Mostrar cuotas en la página de producto',
+                'label'       => 'Activar',
+                'type'        => 'checkbox',
+                'description' => '',
+                'default'     => 'no'
+            ],
+            'fees_text' => [
+                'title' => 'Texto para mostrar las cuotas en el producto',
+                'label' => 'Texto',
+                'type' => 'text',
+                'default' => 'o en 4 cuotas con tarjeta de DÉBITO SIN interés de: ',
+                'description' => 'Ejemplo: o en 4 cuotas con tarjeta de DÉBITO SIN interés de: '
+            ],
+            'fees_number' => [
+                'title' => 'Cuotas a mostrar',
+                'label' => 'Cuotas',
+                'type' => 'number',
+                'default' => 4,
+                'description' => 'Si en el texto de arriba se muestran 4 (cuatro) cuotas, este campo debe ser 4. Si se muestran 3 (tres) cuotas, este campo debe ser 3. etc'
             ],
             'iconfile' => [
                 'title'       => 'Icono',
