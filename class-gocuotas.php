@@ -174,6 +174,11 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $token = $authentication['body'];
         $token = json_decode($token)->token;
 
+        if(!isset($_POST['billing_phone'])) {
+            wc_add_notice('El teléfono de facturación es obligatorio.', 'error');
+            return;
+        }
+
         $total = $order->get_total();
         $total = str_replace(".", "", $total);
         $total = str_replace(",", "", $total);
@@ -196,7 +201,9 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'order_reference_id' => $order_id,
                 'url_success' => $order_received_url_okk,
                 'url_failure' => $order_received_url_fail,
-                'webhook_url' => home_url().'/wc-api/gocuotas_webhook'
+                'webhook_url' => home_url().'/wc-api/gocuotas_webhook',
+                'email' => $order->get_billing_email(),
+                'phone_number' => $order->get_billing_phone(),
             ]
         ]);
 
