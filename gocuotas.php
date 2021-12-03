@@ -5,6 +5,7 @@
  * Version: 1.0.6
  * Author: Juan Iriart
  * Text Domain: gocuotas
+ * Description: Plugin para integración de Go Cuotas en WooCommerce
  */
 
 if (!defined('ABSPATH')) {
@@ -32,3 +33,10 @@ function gocuotas_add_class($gateways)
     $gateways[] = 'WC_Gateway_GoCuotas';
     return $gateways;
 }
+
+function go_deactivate()
+{
+    delete_option( 'woocommerce_gocuotas_settings' );
+}
+
+register_deactivation_hook( __FILE__, 'go_deactivate' );

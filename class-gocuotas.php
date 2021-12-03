@@ -7,8 +7,8 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $this->id = 'gocuotas';
         $this->icon = get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.png');
         $this->has_fields = false;
-        $this->method_title = 'GoCuotas';
-        $this->method_description = 'Descripcion';
+        $this->method_title = 'Go Cuotas';
+        $this->method_description = 'Plugin para integración de Go Cuotas en WooCommerce';
 
         $this->supports = array(
             'products'
@@ -43,14 +43,14 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'default'     => 'no'
             ],
             'title' => [
-                'title'       => 'Title',
+                'title'       => 'Titulo',
                 'type'        => 'text',
                 'description' => 'Titulo a mostrar al finalizar compra.',
                 'default'     => 'Pagar CUOTAS con DEBITO sin interés',
                 'desc_tip'    => true,
             ],
             'description' => [
-                'title'       => 'Description',
+                'title'       => 'Descripción',
                 'type'        => 'textarea',
                 'description' => 'Descripcion a mostrar al finalizar compra.',
                 'default'     => 'Ahora podes pagar en CUOTAS sin interés con tu tarjeta de DEBITO!',
@@ -102,7 +102,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'title'       => 'Activar Log',
                 'label'       => 'Activar',
                 'type'        => 'checkbox',
-                'description' => '',
+                'description' => 'Guarda un log de operaciones en un archivo dentro de la carpeta del plugin.',
                 'default'     => 'no'
             ]
         );
