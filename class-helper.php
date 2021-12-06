@@ -92,7 +92,8 @@ class GoCuotas_Helper
     public function show_fees_product($price, $product)
     {
         // global $product;
-    
+        if(is_admin()) return $price;
+
         if (get_option('woocommerce_gocuotas_settings', true)['show_fees_product'] == 'yes' && is_product()) {
             return $this->fees($price,$product);
         }
