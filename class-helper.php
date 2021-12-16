@@ -23,7 +23,7 @@ class GoCuotas_Helper
     //logger
     public static function go_log($log, $save)
     {
-        $logg = fopen(__DIR__ . '/logs/' . $log, 'w');
+        $logg = fopen(__DIR__ . '/logs/' . $log, 'a');
         fwrite($logg, $save);
         fclose($logg);
     }

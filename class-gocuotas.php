@@ -252,8 +252,30 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     public function webhook()
     {
-        $data = json_decode(file_get_contents('php://input'));
-        GoCuotas_Helper::go_log('webhook.txt', $data . PHP_EOL);
+        $data = json_decode(file_get_contents('php://input'),true);
+
+        GoCuotas_Helper::go_log(date('Y-m-d').'webhook.txt', json_encode($data) . PHP_EOL);
+
+        $order = wc_get_order($data['order_reference_id']);
+
+        if(!$order) return;
+
+        $status = ['completed','processing','cancelled','refunded'];
+
+        if(in_array($order->get_status(),$status)) return;
+
+        if ($data['status'] != 'approved') {
+            $order->update_status('failed');
+            $order->add_order_note(
+                'GO Cuotas: ' .
+                    __('ERROR EN PAGO, DENEGADO. IPN', 'gocuotas')
+            );
+
+            return;
+        } 
+
+        $order->payment_complete();
+        $order->reduce_order_stock();
 
         update_option('webhook_debug', $_GET);
     }
