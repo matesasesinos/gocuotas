@@ -108,7 +108,7 @@ class GoCuotas_Helper
     public function show_fees_product_variations($variation_data, $product, $variation)
     {
         if (get_option('woocommerce_gocuotas_settings', true)['show_fees_product'] == 'yes' && is_product()) {
-            $cuota = $variation_data['display_price'] / 3;
+            $cuota = $variation_data['display_price'] / get_option('woocommerce_gocuotas_settings', true)['fees_number'];
             $cuota = number_format($cuota, 2, '.', ',');
             $variation_data['price_html'] .= '<span class="custom-price-prefix">' . get_option('woocommerce_gocuotas_settings', true)['fees_text'] . ' $' . $cuota . ' con <a id="fee" href="https://www.gocuotas.com" target="_blank"> <img style="max-height: 35px;" src="' . get_option('go_cuotas_icon') . '"> </a></span>';
 

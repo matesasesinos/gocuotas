@@ -5,7 +5,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     public function __construct()
     {
         $this->id = 'gocuotas';
-        $this->icon = get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.png');
+        $this->icon = get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg');
         $this->has_fields = false;
         $this->method_title = 'Go Cuotas';
         $this->method_description = 'Plugin para integración de Go Cuotas en WooCommerce';
@@ -95,7 +95,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'title'       => 'Icono',
                 'label'       => 'Icono a mostrar',
                 'type'        => 'file',
-                'description' => 'Icono que se mostrara al finalizar la compra.',
+                'description' => 'Icono que se mostrara al finalizar la compra. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon') . '" />',
                 'default'     => get_option('go_cuotas_icon'),
             ],
             'logg' => [
@@ -197,7 +197,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'order_reference_id' => $order_id,
                 'url_success' => $order_received_url_okk,
                 'url_failure' => $order_received_url_fail,
-                'webhook_url' => home_url().'/wc-api/gocuotas_webhook',
+                'webhook_url' => home_url() . '/wc-api/gocuotas_webhook',
                 'email' => $order->get_billing_email(),
                 'phone_number' => $order->get_billing_phone(),
             ]
@@ -252,17 +252,17 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     public function webhook()
     {
-        $data = json_decode(file_get_contents('php://input'),true);
+        $data = json_decode(file_get_contents('php://input'), true);
 
-        GoCuotas_Helper::go_log(date('Y-m-d').'webhook.txt', json_encode($data) . PHP_EOL);
+        GoCuotas_Helper::go_log(date('Y-m-d') . 'webhook.txt', json_encode($data) . PHP_EOL);
 
         $order = wc_get_order($data['order_reference_id']);
 
-        if(!$order) return;
+        if (!$order) return;
 
-        $status = ['completed','processing','cancelled','refunded'];
+        $status = ['completed', 'processing', 'cancelled', 'refunded'];
 
-        if(in_array($order->get_status(),$status)) return;
+        if (in_array($order->get_status(), $status)) return;
 
         if ($data['status'] != 'approved') {
             $order->update_status('failed');
@@ -272,7 +272,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
             );
 
             return;
-        } 
+        }
 
         $order->payment_complete();
         $order->reduce_order_stock();
