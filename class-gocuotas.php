@@ -5,7 +5,6 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     public function __construct()
     {
         $this->id = 'gocuotas';
-        $this->icon = get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg');
         $this->has_fields = false;
         $this->method_title = 'Go Cuotas';
         $this->method_description = 'Plugin para integración de Go Cuotas en WooCommerce';
@@ -90,13 +89,6 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'type' => 'number',
                 'default' => 4,
                 'description' => 'Si en el texto de arriba se muestran 4 (cuatro) cuotas, este campo debe ser 4. Si se muestran 3 (tres) cuotas, este campo debe ser 3. etc'
-            ],
-            'iconfile' => [
-                'title'       => 'Icono',
-                'label'       => 'Icono a mostrar',
-                'type'        => 'file',
-                'description' => 'Icono que se mostrara al finalizar la compra. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon') . '" />',
-                'default'     => get_option('go_cuotas_icon'),
             ],
             'logg' => [
                 'title'       => 'Activar Log',
