@@ -215,7 +215,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $url_init = json_decode($url_init)->url_init;
 
         update_post_meta($order_id, 'gocuotas_response', $payment_init['body']);
-        $order->reduce_order_stock();
+        wc_reduce_stock_levels($order_id);
         WC()->cart->empty_cart();
 
         return array(
@@ -267,7 +267,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         }
 
         $order->payment_complete();
-        $order->reduce_order_stock();
+        wc_reduce_stock_levels($data['order_reference_id']);
 
         update_option('webhook_debug', $_GET);
     }
@@ -291,13 +291,15 @@ function override_cancel_unpaid_orders()
         foreach ($unpaid_orders as $unpaid_order) {
             $order = wc_get_order($unpaid_order);
 
-            if (apply_filters('woocommerce_cancel_unpaid_order', 'checkout' === $order->get_created_via(), $order)) {
-                $order->update_status('cancelled', __('Unpaid order cancelled - time limit reached.', 'woocommerce'));
+            if ($order->get_payment_method() == 'gocuotas') {
+                if (apply_filters('woocommerce_cancel_unpaid_order', 'checkout' === $order->get_created_via(), $order)) {
+                    $order->update_status('cancelled', __('Unpaid order cancelled - time limit reached.', 'woocommerce'));
 
-                foreach ($order->get_items() as $item_id => $item) {
-                    $product = $item->get_product();
-                    $qty = $item->get_quantity();
-                    wc_update_product_stock($product, $qty, 'increase');
+                    foreach ($order->get_items() as $item_id => $item) {
+                        $product = $item->get_product();
+                        $qty = $item->get_quantity();
+                        wc_update_product_stock($product, $qty, 'increase');
+                    }
                 }
             }
         }
