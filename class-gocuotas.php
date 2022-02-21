@@ -29,6 +29,9 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
 
         add_action('woocommerce_api_gocuotas_webhook', array($this, 'webhook'));
+
+        remove_filter('woocommerce_cancel_unpaid_orders', 'wc_cancel_unpaid_orders');
+        add_filter('woocommerce_cancel_unpaid_orders', [$this, 'override_cancel_unpaid_orders']);
     }
 
     public function init_form_fields()
@@ -270,5 +273,35 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $order->reduce_order_stock();
 
         update_option('webhook_debug', $_GET);
+    }
+
+    public function override_cancel_unpaid_orders()
+    {
+        $held_duration = get_option('woocommerce_hold_stock_minutes');
+
+        if ($held_duration < 1 || 'yes' !== get_option('woocommerce_manage_stock')) {
+            return;
+        }
+
+        $data_store    = WC_Data_Store::load('order');
+        $unpaid_orders = $data_store->get_unpaid_orders(strtotime('-' . absint($held_duration) . ' MINUTES', current_time('timestamp')));
+
+        if ($unpaid_orders) {
+            foreach ($unpaid_orders as $unpaid_order) {
+                $order = wc_get_order($unpaid_order);
+
+                if (apply_filters('woocommerce_cancel_unpaid_order', 'checkout' === $order->get_created_via(), $order)) {
+                    $order->update_status('cancelled', __('Unpaid order cancelled - time limit reached.', 'woocommerce'));
+
+                    foreach ($order->get_items() as $item_id => $item) {
+                        $product = $item->get_product();
+                        $qty = $item->get_quantity();
+                        wc_update_product_stock($product, $qty, 'increase');
+                    }
+                }
+            }
+        }
+        wp_clear_scheduled_hook('woocommerce_cancel_unpaid_orders');
+        wp_schedule_single_event(time() + (absint($held_duration) * 60), 'woocommerce_cancel_unpaid_orders');
     }
 }
