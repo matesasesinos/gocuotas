@@ -29,6 +29,8 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
 
         add_action('woocommerce_api_gocuotas_webhook', array($this, 'webhook'));
+
+        add_filter('woocommerce_available_payment_gateways', array($this, 'restrict_payment_option'));
     }
 
     public function init_form_fields()
@@ -90,6 +92,12 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'default' => 4,
                 'description' => 'Si en el texto de arriba se muestran 4 (cuatro) cuotas, este campo debe ser 4. Si se muestran 3 (tres) cuotas, este campo debe ser 3. etc'
             ],
+            'max_total' => [
+                'title' => 'Mostrar solo si el total es menor a: ',
+                'lable' => 'Máximo',
+                'type' => 'number',
+                'description' => 'Configurar el costo máximo de la orden para utilizar el plugin, este total también muestra o no las cuotas en el producto, deje el campo vacio para desactivar'
+            ],
             'logg' => [
                 'title'       => 'Activar Log',
                 'label'       => 'Activar',
@@ -113,6 +121,27 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         }
+    }
+
+    public function restrict_payment_option($available_gateways)
+    {
+        if (is_admin()) {
+            return $available_gateways;
+        }
+
+        if (is_wc_endpoint_url('order_pay')) {
+            $order_id = wc_get_order_id_by_order_key($_GET['key']);
+            $order = wc_get_order($order_id);
+            $order_total = $order->get_total();
+        } else {
+            $order_total = WC()->cart->total;
+        }
+
+        if(get_option('woocommerce_gocuotas_settings', true)['max_total'] < $order_total && get_option('woocommerce_gocuotas_settings', true)['max_total']!= '') {
+            unset($available_gateways['gocuotas']);
+        }
+
+        return $available_gateways;
     }
 
     public function payment_scripts()

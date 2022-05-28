@@ -53,8 +53,9 @@ class GoCuotas_Helper
     {
         // global $product;
         if (is_admin()) return $price;
+        if(get_option('woocommerce_gocuotas_settings', true)['enabled'] == 'no') return $price;       
 
-        if(get_option('woocommerce_gocuotas_settings', true)["enabled"] == 'no') return $price;
+        if(get_option('woocommerce_gocuotas_settings', true)['max_total'] < $product->price && get_option('woocommerce_gocuotas_settings', true)['max_total']!= '') return $price;
         
         if (get_option('woocommerce_gocuotas_settings', true)['show_fees_product'] == 'yes' && is_product()) {
             
