@@ -30,7 +30,6 @@ class GoCuotas_Helper
 
     public function fees($price, $product_id)
     {
-        //echo $product_id;
         $product = wc_get_product($product_id);
         $sale_price = $product->get_sale_price();
         $regular_price = $product->get_regular_price();
@@ -52,24 +51,22 @@ class GoCuotas_Helper
     }
 
     public function show_fees_product($price, $product)
-    {
-        $post = get_post_type(get_queried_object_id(  ));
-
-        if($post != 'product') return;
- 
+    { 
         if (is_admin()) return $price;
 
         if(get_option('woocommerce_gocuotas_settings', true)['enabled'] == 'no') return $price;  
-        
-        if(get_option('woocommerce_gocuotas_settings', true)['max_total'] < $product->get_price() && get_option('woocommerce_gocuotas_settings', true)['max_total']!= '') return $price;
+
+        $p = wc_get_product($product->get_id());
+
+        if(get_option('woocommerce_gocuotas_settings', true)['max_total'] < $p->get_price() && get_option('woocommerce_gocuotas_settings', true)['max_total']!= '') return $price;
         
         if (get_option('woocommerce_gocuotas_settings', true)['show_fees_product'] == 'yes' && is_product()) {
             
-            return $this->fees($price, get_queried_object_id(  ));
+            return $this->fees($price, $product->get_id());
         }
 
         if (get_option('woocommerce_gocuotas_settings', true)['show_fees_category'] == 'yes' && !is_product()) {
-            return $this->fees($price, get_queried_object_id(  ));
+            return $this->fees($price, $product->get_id());
         }
 
         return $price;
