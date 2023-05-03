@@ -137,7 +137,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
             $order_total = WC()->cart->total;
         }
 
-        if(get_option('woocommerce_gocuotas_settings', true)['max_total'] < $order_total && get_option('woocommerce_gocuotas_settings', true)['max_total']!= '') {
+        if (get_option('woocommerce_gocuotas_settings', true)['max_total'] < $order_total && get_option('woocommerce_gocuotas_settings', true)['max_total'] != '') {
             unset($available_gateways['gocuotas']);
         }
 
@@ -199,6 +199,10 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $total = $order->get_total();
         $total = str_replace(".", "", $total);
         $total = str_replace(",", "", $total);
+
+        if (intval(get_option('woocommerce_price_num_decimals')) == 0) {
+            $total = number_format($total, 2, '', '');
+        }
 
         $order_received_url = wc_get_endpoint_url('order-received', $order->get_id(), wc_get_checkout_url());
         $order_received_url_ok = $order_received_url . "done/";
