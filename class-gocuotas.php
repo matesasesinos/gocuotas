@@ -5,6 +5,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     public function __construct()
     {
         $this->id = 'gocuotas';
+        $this->icon = get_option('woocommerce_gocuotas_settings', true)['show_icons'] === 'yes' ? get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg') : '';
         $this->has_fields = false;
         $this->method_title = 'Go Cuotas';
         $this->method_description = 'Plugin para integración de Go Cuotas en WooCommerce';
@@ -98,6 +99,20 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'type' => 'number',
                 'description' => 'Configurar el costo máximo de la orden para utilizar el plugin, este total también muestra o no las cuotas en el producto, deje el campo vacio para desactivar'
             ],
+            'iconfile' => [
+                'title'       => 'Icono',
+                'label'       => 'Icono a mostrar',
+                'type'        => 'file',
+                'description' => 'Icono que se mostrara en el producto y al finalizar la compra. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg') . '" style="max-width:100px" />',
+                'default'     => get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg'),
+            ],
+             'show_icons' => [
+                'title'       => 'Mostrar iconos (logos)',
+                'label'       => 'Activar',
+                'type'        => 'checkbox',
+                'description' => 'Mostrar o no los logos del plugin, si lo desactiva, no se ven en ninguna parte de la página.',
+                'default'     => 'yes'
+             ],
             'logg' => [
                 'title'       => 'Activar Log',
                 'label'       => 'Activar',
