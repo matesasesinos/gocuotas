@@ -143,13 +143,13 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         if (is_admin()) {
             return $available_gateways;
         }
-
+        
         if (is_wc_endpoint_url('order_pay')) {
             $order_id = wc_get_order_id_by_order_key($_GET['key']);
             $order = wc_get_order($order_id);
             $order_total = $order->get_total();
         } else {
-            $order_total = WC()->cart->total;
+            $order_total = WC()->cart != null ? WC()->cart->total : [];
         }
 
         if (get_option('woocommerce_gocuotas_settings', true)['max_total'] < $order_total && get_option('woocommerce_gocuotas_settings', true)['max_total'] != '') {
@@ -354,4 +354,28 @@ function override_cancel_unpaid_orders()
     }
     wp_clear_scheduled_hook('woocommerce_cancel_unpaid_orders');
     wp_schedule_single_event(time() + (absint($held_duration) * 60), 'woocommerce_cancel_unpaid_orders');
+}
+
+
+// Detectar un pago fallido o cancelado y restaurar el stock
+add_action('woocommerce_order_status_changed', 'my_custom_order_status_changed', 10, 4);
+function my_custom_order_status_changed($order_id, $old_status, $new_status, $order)
+{
+    if ($new_status !== 'failed' && $new_status !== 'cancelled') {
+        return; // Si el estado de la orden no es "failed" o "cancelled", no hacemos nada
+    }
+
+    // Restaurar el stock de los productos
+    foreach ($order->get_items() as $item_id => $item) {
+        $product = $item->get_product();
+        $product_id = $product ? $product->get_id() : $item->get_product_id();
+
+        // Obtener la cantidad devuelta por el cliente
+        $returned_quantity = $item->get_quantity();
+
+        // Restaurar el stock
+        if ($product_id && $returned_quantity > 0) {
+            wc_update_product_stock($product_id, $returned_quantity, 'increase');
+        }
+    }
 }
