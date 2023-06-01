@@ -23,9 +23,7 @@ class GoCuotas_Helper
     //logger
     public static function go_log($log, $save)
     {
-        $logg = fopen(__DIR__ . '/logs/' . $log, 'a');
-        fwrite($logg, $save);
-        fclose($logg);
+        file_put_contents(__DIR__ . '/logs/'.date('Y-m-d').'_'.$log.'.txt', json_encode($save) . "\n", FILE_APPEND);
     }
 
     public function uploadIcon()
