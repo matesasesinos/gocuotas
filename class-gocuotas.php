@@ -5,7 +5,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     public function __construct()
     {
         $this->id = 'gocuotas';
-        $this->icon = isset(get_option('woocommerce_gocuotas_settings', true)['show_icons'] )=== 'yes' ? get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg') : '';
+        $this->icon = isset(get_option('woocommerce_gocuotas_settings', true)['show_icons'] )=== 'yes' ? get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.png') : '';
         $this->has_fields = false;
         $this->method_title = 'Go Cuotas';
         $this->method_description = 'Plugin para integración de Go Cuotas en WooCommerce';
@@ -103,8 +103,8 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'title'       => 'Icono',
                 'label'       => 'Icono a mostrar',
                 'type'        => 'file',
-                'description' => 'Icono que se mostrara en el producto y al finalizar la compra. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg') . '" style="max-width:100px" />',
-                'default'     => get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg'),
+                'description' => 'Icono que se mostrara en el producto y al finalizar la compra. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.png') . '" style="max-width:100px" />',
+                'default'     => get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.png'),
             ],
              'show_icons' => [
                 'title'       => 'Mostrar iconos (logos)',
@@ -197,7 +197,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         ]);
 
         if ($godata['logg'] == 'yes') {
-            GoCuotas_Helper::go_log('auth-info.txt', json_encode($authentication) . PHP_EOL);
+            GoCuotas_Helper::go_log(date('Y-m-d-H-i-s').'auth-info.txt', json_encode($authentication) . PHP_EOL);
         }
 
         $auth_response = $authentication['response'];
@@ -256,7 +256,12 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         }
 
         if ($godata['logg'] == 'yes') {
-            GoCuotas_Helper::go_log('payment_info.txt', json_encode($payment_init['body']) . PHP_EOL);
+            $file = date('Y-m-d-H-i-s') . '-payment_info.txt';
+            GoCuotas_Helper::go_log($file, json_encode($payment_init['body']) . PHP_EOL);
+            $dataLog = plugin_dir_url( __FILE__ ).'/info/'.$file;
+            $message = "Go Cuotas: Detalles del pago<br /> Ver / Descargar <a href='{$dataLog}' target='_blank'>LOG</a>";
+            $orderData = wc_get_order($order_id);
+            $orderData->add_order_note($message);
         }
 
         $url_init = $payment_init['body'];
@@ -294,7 +299,11 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
-        GoCuotas_Helper::go_log(date('Y-m-d') . 'webhook.txt', json_encode($data) . PHP_EOL);
+        $fileLog = date('Y-m-d') . 'webhook.txt';
+
+        GoCuotas_Helper::go_log($fileLog, json_encode($data) . PHP_EOL);
+
+        $dataLog = plugin_dir_url(__FILE__).'info/' . $fileLog;
 
         $order = wc_get_order($data['order_reference_id']);
 
@@ -305,11 +314,9 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         if (in_array($order->get_status(), $status)) return;
 
         if ($data['status'] != 'approved') {
+            $message = "Go Cuotas: ERROR EN PAGO, DENEGADO. IPN<br /> Más información <a href='{$dataLog}' target='_blank'>Ver Log</a>";
             $order->update_status('failed');
-            $order->add_order_note(
-                'GO Cuotas: ' .
-                    __('ERROR EN PAGO, DENEGADO. IPN', 'gocuotas')
-            );
+            $order->add_order_note($message);
 
             return;
         }
@@ -318,64 +325,5 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         wc_reduce_stock_levels($data['order_reference_id']);
 
         update_option('webhook_debug', $_GET);
-    }
-}
-
-remove_filter('woocommerce_cancel_unpaid_orders', 'wc_cancel_unpaid_orders');
-add_filter('woocommerce_cancel_unpaid_orders', 'override_cancel_unpaid_orders');
-
-function override_cancel_unpaid_orders()
-{
-    $held_duration = get_option('woocommerce_hold_stock_minutes');
-
-    if ($held_duration < 1 || 'yes' !== get_option('woocommerce_manage_stock')) {
-        return;
-    }
-
-    $data_store    = WC_Data_Store::load('order');
-    $unpaid_orders = $data_store->get_unpaid_orders(strtotime('-' . absint($held_duration) . ' MINUTES', current_time('timestamp')));
-
-    if ($unpaid_orders) {
-        foreach ($unpaid_orders as $unpaid_order) {
-            $order = wc_get_order($unpaid_order);
-
-            if ($order->get_payment_method() == 'gocuotas') {
-                if (apply_filters('woocommerce_cancel_unpaid_order', 'checkout' === $order->get_created_via(), $order)) {
-                    $order->update_status('cancelled', __('Unpaid order cancelled - time limit reached.', 'woocommerce'));
-
-                    foreach ($order->get_items() as $item_id => $item) {
-                        $product = $item->get_product();
-                        $qty = $item->get_quantity();
-                        wc_update_product_stock($product, $qty, 'increase');
-                    }
-                }
-            }
-        }
-    }
-    wp_clear_scheduled_hook('woocommerce_cancel_unpaid_orders');
-    wp_schedule_single_event(time() + (absint($held_duration) * 60), 'woocommerce_cancel_unpaid_orders');
-}
-
-
-// Detectar un pago fallido o cancelado y restaurar el stock
-add_action('woocommerce_order_status_changed', 'my_custom_order_status_changed', 10, 4);
-function my_custom_order_status_changed($order_id, $old_status, $new_status, $order)
-{
-    if ($new_status !== 'failed' && $new_status !== 'cancelled') {
-        return; // Si el estado de la orden no es "failed" o "cancelled", no hacemos nada
-    }
-
-    // Restaurar el stock de los productos
-    foreach ($order->get_items() as $item_id => $item) {
-        $product = $item->get_product();
-        $product_id = $product ? $product->get_id() : $item->get_product_id();
-
-        // Obtener la cantidad devuelta por el cliente
-        $returned_quantity = $item->get_quantity();
-
-        // Restaurar el stock
-        if ($product_id && $returned_quantity > 0) {
-            wc_update_product_stock($product_id, $returned_quantity, 'increase');
-        }
     }
 }

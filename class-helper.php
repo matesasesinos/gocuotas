@@ -23,7 +23,7 @@ class GoCuotas_Helper
     //logger
     public static function go_log($log, $save)
     {
-        file_put_contents(__DIR__ . '/info/'.date('Y-m-d').'_'.$log.'.txt', json_encode($save) . "\n", FILE_APPEND);
+        file_put_contents(__DIR__ . '/info/'. $log, json_encode($save) . "\n", FILE_APPEND);
     }
 
     public function uploadIcon()
@@ -69,7 +69,7 @@ class GoCuotas_Helper
     private function show_logo()
     {
         if(get_option('woocommerce_gocuotas_settings', true)['show_icons'] === 'yes' && (is_product() || is_checkout())) {
-            return ' <a id="fee" href="https://www.gocuotas.com" target="_blank"><img style="max-height: 35px;" src="' . get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.svg') . '"> </a>';
+            return ' <a id="fee" href="https://www.gocuotas.com" target="_blank"><img style="max-height: 35px;" src="' . get_option('go_cuotas_icon', plugin_dir_url(__FILE__) . 'logo.png') . '"> </a>';
         }
 
         return;
