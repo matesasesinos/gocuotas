@@ -268,9 +268,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $url_init = json_decode($url_init)->url_init;
 
         update_post_meta($order_id, 'gocuotas_response', $payment_init['body']);
-        wc_reduce_stock_levels($order_id);
-        WC()->cart->empty_cart();
-
+        
         return array(
             'result' => 'success',
             'redirect' => $url_init
@@ -278,9 +276,9 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     }
     public function thankyou_page($order_id)
     {
-        if ($this->instructions) {
-            echo wpautop(wptexturize($this->instructions));
-        }
+        // if ($this->instructions) {
+        //     echo wpautop(wptexturize($this->instructions));
+        // }
 
         $r = $_SERVER['REQUEST_URI'];
         $r = explode('/', $r);
@@ -288,6 +286,12 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         if (in_array("done", $r)) {
             $order = wc_get_order($order_id);
             $order->payment_complete();
+            wc_reduce_stock_levels($order_id);
+            WC()->cart->empty_cart();
+           
+            if($order->get_status() == 'processing')
+                return;
+
             $order->add_order_note(
                 'GO Cuotas: ' .
                     __('Payment APPROVED. IPN', 'gocuotas')
