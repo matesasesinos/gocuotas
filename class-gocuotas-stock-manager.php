@@ -19,7 +19,12 @@ class GoCuotasStockManager
         if (!$order || 'yes' !== get_option('woocommerce_manage_stock') || !apply_filters('woocommerce_can_reduce_order_stock', true, $order) || get_option('woocommerce_hold_stock_minutes') < 1) {
             return;
         }      
+
         $orderMessage = [];
+
+        if($order->get_payment_method() != 'gocuotas')
+            return;
+
         foreach ($order->get_items() as $item) {
             if ($item['product_id'] > 0) {
                 $_product = wc_get_product($item['product_id']);
@@ -39,4 +44,4 @@ class GoCuotasStockManager
     }
 }
 
-new GoCuotasStockManager();
+//new GoCuotasStockManager();
