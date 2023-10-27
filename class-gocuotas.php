@@ -313,6 +313,9 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
         if (!$order) return;
 
+        if($order->get_payment_method() != 'gocuotas')
+            return;
+
         $status = ['completed', 'processing', 'cancelled', 'refunded'];
 
         if (in_array($order->get_status(), $status)) return;

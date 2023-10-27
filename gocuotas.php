@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Go Cuotas
- * Version: 1.2.4.1
+ * Version: 1.2.4.2
  * Author: Juan Iriart
  * Text Domain: gocuotas
  * Description: Plugin para integración de Go Cuotas en WooCommerce
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 define('GC_VERSION', '1.2.3');
 
 require_once plugin_dir_path(__FILE__) . 'class-helper.php';
-require_once plugin_dir_path(__FILE__) . '/class-gocuotas-stock-manager.php';
+//require_once plugin_dir_path(__FILE__) . '/class-gocuotas-stock-manager.php';
 
 add_action('plugins_loaded', 'init_gocuotas_class');
 
