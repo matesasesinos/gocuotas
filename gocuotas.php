@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-require_once __DIR__.'/updater/plugin-update-checker.php';;
+require_once __DIR__.'/updater/plugin-update-checker.php';
 use YahnisElsts\PluginUpdateChecker\v5\PucFactory;
 
 $myUpdateChecker = PucFactory::buildUpdateChecker(
