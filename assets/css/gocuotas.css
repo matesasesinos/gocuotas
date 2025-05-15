@@ -1,0 +1,16 @@
+.payment_method_gocuotas img {
+  max-width: 30px;
+}
+
+.singlefee {
+  font-size: 13px;
+  display: block;
+  line-height: 16px;
+  padding-top: 1%;
+}
+
+.woocommerce-variation-price .singlefee,
+.related .singlefee,
+.related #fee {
+  display: none;
+}
