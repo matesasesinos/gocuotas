@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Go Cuotas
- * Version: 1.3.2
+ * Version: 1.3.3
  * Author: Juan Iriart
  * Text Domain: gocuotas
  * Description: Plugin para integración de Go Cuotas en WooCommerce
@@ -23,7 +23,7 @@ $myUpdateChecker = PucFactory::buildUpdateChecker(
 
 $myUpdateChecker->setBranch('stable');
 
-define('GC_VERSION', '1.3.2');
+define('GC_VERSION', '1.3.3');
 
 require_once plugin_dir_path(__FILE__) . 'includes/helpers/class-helper.php';
 
