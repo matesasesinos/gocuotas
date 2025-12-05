@@ -8,6 +8,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 {
     public $id = 'gocuotas';
     public $sandbox;
+    public $utmParams;
 
     public function __construct()
     {
@@ -27,6 +28,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $this->description = $this->get_option('description');
         $this->enabled = $this->get_option('enabled');
         $this->sandbox = $this->get_option('sandbox');
+        $this->utmParams = $this->get_option('utm_params');
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 
@@ -64,6 +66,13 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'type'        => 'textarea',
                 'description' => 'Descripcion a mostrar al finalizar compra.',
                 'default'     => 'Ahora podes pagar en CUOTAS sin interés con tu tarjeta de DEBITO!',
+            ],
+            'sandbox' => [
+                'title'       => 'Modo Sandbox',
+                'label'       => 'Activar',
+                'type'        => 'checkbox',
+                'description' => 'Habilitar el modo sandbox para pruebas.',
+                'default'     => 'no'
             ],
             'email_go' => [
                 'title'       => 'Email API Comercio',
@@ -125,14 +134,14 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'title'       => 'Activar Log',
                 'label'       => 'Activar',
                 'type'        => 'checkbox',
-                'description' => 'Guarda un log de operaciones en un archivo dentro de la carpeta del plugin.',
+                'description' => 'Guarda un log de operaciones, se puede encontrar en WooCommerce > Estado > Registros (gocuotas).',
                 'default'     => 'no'
             ],
-            'sandbox' => [
-                'title'       => 'Modo Sandbox',
+            'utm_params' => [
+                'title'       => 'Incluir parámetros UTM',
                 'label'       => 'Activar',
                 'type'        => 'checkbox',
-                'description' => 'Habilitar el modo sandbox para pruebas.',
+                'description' => 'Incluir los parámetros UTM en las URLs de éxito y fracaso para el seguimiento de campañas.',
                 'default'     => 'no'
             ],
         );
@@ -198,6 +207,10 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     public function utmScript()
     {
+        if ($this->utmParams !== 'yes') {
+            return;
+        }
+
         wp_enqueue_script('gocuotas_utm', plugin_dir_url(__DIR__) . '/../assets/js/gocuotas-utm.js', array(), '1.0.0', true);
     }
 
@@ -329,11 +342,8 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
     {
         $data = json_decode(file_get_contents('php://input'), true);
 
-        $fileLog = date('Y-m-d') . 'webhook.txt';
-
-        GoCuotas_Helper::go_log($fileLog, json_encode($data) . PHP_EOL);
-
-        $dataLog = plugin_dir_url(__FILE__) . 'info/' . $fileLog;
+        // Logger
+        wc_get_logger()->info('GoCuotas: Webhook recibido - ' . print_r($data, true), array('source' => 'gocuotas'));
 
         $order = wc_get_order($data['order_reference_id']);
 
@@ -421,6 +431,10 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     private function setUTMParams()
     {
+        if ($this->utmParams !== 'yes') {
+            return [];
+        }
+
         $utmParams = [];
         $keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
