@@ -7,6 +7,7 @@ if (! defined('ABSPATH')) {
 class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 {
     public $id = 'gocuotas';
+    public $sandbox;
 
     public function __construct()
     {
@@ -25,6 +26,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
         $this->enabled = $this->get_option('enabled');
+        $this->sandbox = $this->get_option('sandbox');
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
 
@@ -124,7 +126,14 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'type'        => 'checkbox',
                 'description' => 'Guarda un log de operaciones en un archivo dentro de la carpeta del plugin.',
                 'default'     => 'no'
-            ]
+            ],
+            'sandbox' => [
+                'title'       => 'Modo Sandbox',
+                'label'       => 'Activar',
+                'type'        => 'checkbox',
+                'description' => 'Habilitar el modo sandbox para pruebas.',
+                'default'     => 'no'
+            ],
         );
     }
 
@@ -194,26 +203,43 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
             $godata = get_option('woocommerce_gocuotas_settings', true);
 
 
-            $authentication = wp_remote_post('https://www.gocuotas.com/api_redirect/v1/authentication', [
+            if ($this->sandbox == 'yes') {
+                $endpoint = 'https://sandbox.gocuotas.com';
+            } else {
+                $endpoint = 'https://www.gocuotas.com';
+            }
+
+            $authentication = wp_remote_post($endpoint . '/api_redirect/v1/authentication/?email=' . $godata['email_go'] . '&password=' . $godata['password_go'], [
                 'method' => 'POST',
-                'body' => [
-                    'email' => $godata['email_go'],
-                    'password' => $godata['password_go']
-                ]
+                'timeout' => 20,
+                'redirection' => 5,
             ]);
 
+            if (is_wp_error($authentication)) {
+                wc_get_logger()->error('GoCuotas: Error en la petición de autenticación - ' . $authentication->get_error_message(), array('source' => 'gocuotas'));
+                return [
+                    'result'   => 'failure',
+                    'messages' => __('GoCuotas: Error en la conexión con la API', 'gocuotas'),
+                    'reload'   => false,
+                ];
+            }
+
+            $response_code = isset($authentication['response']['code']) ? $authentication['response']['code'] : 0;
+
+            if ($response_code == 401) {
+                wc_get_logger()->error('GoCuotas: Error en las credenciales del comercio', array('source' => 'gocuotas'));
+                return [
+                    'result'   => 'failure',
+                    'messages' => __('GoCuotas: Error en las credenciales del comercio', 'gocuotas'),
+                    'reload'   => false,
+                ];
+            }
+
             if ($godata['logg'] == 'yes') {
-                GoCuotas_Helper::go_log(date('Y-m-d-H-i-s') . 'auth-info.txt', json_encode($authentication) . PHP_EOL);
+                wc_get_logger()->debug(json_encode($authentication), array('source' => 'gocuotas'));
             }
 
-            $auth_response = $authentication['response'];
-
-            if ($auth_response['code'] != 200) {
-                wc_add_notice($auth_response['message'] == 'Unauthorized' ? 'Error de autenticación de comercio.' : $auth_response['message'], 'error');
-                return;
-            }
-
-            $token = $authentication['body'];
+            $token = wp_remote_retrieve_body($authentication);
             $token = json_decode($token)->token;
 
 
@@ -226,39 +252,49 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
             }
 
             $order_received_url = wc_get_endpoint_url('order-received', $order->get_id(), wc_get_checkout_url());
-            $order_received_url_ok = $order_received_url . "done/";
+            $order_received_url_ok = $order_received_url;
 
             $order_received_url_fail =  $order->get_checkout_payment_url($on_checkout = false);
 
             $order_received_url_okk = add_query_arg('key', $order->get_order_key(), $order_received_url_ok);
 
+            $headers = [
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type' => 'application/json',
+            ];
+            $body = [
+                'amount_in_cents' => $total,
+                'order_reference_id' => $order_id,
+                'url_success' => $order_received_url_okk,
+                'url_failure' => $order_received_url_fail,
+                'webhook_url' => home_url() . '/wc-api/gocuotas_webhook',
+                'email' => $order->get_billing_email(),
+                'phone_number' => $order->get_billing_phone(),
+            ];
 
-            $payment_init = wp_remote_post('https://www.gocuotas.com/api_redirect/v1/checkouts', [
-                'method' => 'POST',
-                'headers' => [
-                    'Authorization' => $token
-                ],
-                'body' => [
-                    'amount_in_cents' => $total,
-                    'order_reference_id' => $order_id,
-                    'url_success' => $order_received_url_okk,
-                    'url_failure' => $order_received_url_fail,
-                    'webhook_url' => home_url() . '/wc-api/gocuotas_webhook',
-                    'email' => $order->get_billing_email(),
-                    'phone_number' => $order->get_billing_phone(),
-                ]
+            $payment_init = wp_remote_post($endpoint . '/api_redirect/v1/checkouts', [
+                'headers' => $headers,
+                'body' => json_encode($body),
             ]);
 
             if (is_wp_error($payment_init)) {
-                wc_add_notice('Error de pago: Ocurrio un error al conectar con la API.', 'error');
-                return;
+                wc_get_logger()->error('GoCuotas: Error en la respuesta API ' . json_encode($payment_init), array('source' => 'gocuotas'));
+                return [
+                    'result'   => 'failure',
+                    'messages' => __('GoCuotas: Error en la respuesta API', 'gocuotas'),
+                    'reload'   => false,
+                ];
             };
 
             $response = $payment_init['response'];
 
             if ($response['code'] != 201) {
-                wc_add_notice('Error de pago: Ocurrio un error al pagar. "' . $response['message'] . '"', 'error');
-                return;
+                wc_get_logger()->error('GoCuotas: Error en la respuesta API ' . json_encode($response), array('source' => 'gocuotas'));
+                return [
+                    'result'   => 'failure',
+                    'messages' => __('GoCuotas: Error en la respuesta API', 'gocuotas'),
+                    'reload'   => false,
+                ];
             }
 
             if ($godata['logg'] == 'yes') {
@@ -280,33 +316,29 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'redirect' => $url_init
             );
         } catch (Exception $e) {
+            wc_add_notice($e->getMessage(), 'error');
             return $e->getMessage();
         }
     }
 
     public function thankyou_page($order_id)
     {
-        // if ($this->instructions) {
-        //     echo wpautop(wptexturize($this->instructions));
-        // }
+        $order = wc_get_order($order_id);
 
-        $r = $_SERVER['REQUEST_URI'];
-        $r = explode('/', $r);
+        if (!$order)
+            return;
 
-        if (in_array("done", $r)) {
-            $order = wc_get_order($order_id);
-            $order->payment_complete();
-            wc_reduce_stock_levels($order_id);
-            WC()->cart->empty_cart();
-
-            if ($order->get_status() == 'processing')
-                return;
-
-            $order->add_order_note(
-                'GO Cuotas: ' .
-                    __('Payment APPROVED. IPN', 'gocuotas')
-            );
+        if ($order->get_payment_method() !== $this->id) {
+            return;
         }
+
+        $skip_status = array('processing', 'completed', 'on-hold');
+        if (in_array($order->get_status(), $skip_status, true)) {
+            return;
+        }
+        // wc_reduce_stock_levels($order_id);
+        $order->add_order_note(__('GO Cuotas: usuario llegó a la página de agradecimiento. Pendiente verificación IPN.', 'gocuotas'));
+        WC()->cart->empty_cart();
     }
 
     public function webhook()
