@@ -185,7 +185,6 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     public function payment_scripts()
     {
-
         if (!is_cart() && !is_checkout() && !isset($_GET['pay_for_order'])) {
             return;
         }
@@ -311,19 +310,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     public function thankyou_page($order_id)
     {
-        $order = wc_get_order($order_id);
-
-        if (!$order)
-            return;
-
-        if ($order->get_payment_method() !== $this->id) {
-            return;
-        }
-
-        $skip_status = array('processing', 'completed', 'on-hold');
-        if (in_array($order->get_status(), $skip_status, true)) {
-            return;
-        }
+        // delete utm cookies if exist
         if (!empty($this->setUTMParams())) {
             $keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
@@ -334,8 +321,26 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 }
             }
         }
-        $order->add_order_note(__('GO Cuotas: usuario llegó a la página de agradecimiento. Pendiente verificación IPN.', 'gocuotas'));
-        WC()->cart->empty_cart();
+
+        $order = wc_get_order($order_id);
+
+        if (!$order)
+            return;
+
+        if ($order->get_payment_method() !== $this->id) {
+            return;
+        }
+
+        $skip_status = array('processing', 'completed');
+        if (in_array($order->get_status(), $skip_status, true)) {
+            return;
+        }
+
+        $order->add_order_note(__('GO Cuotas: esperando confirmación de pago.', 'gocuotas'));
+
+        if (class_exists('WC_Cart') && WC()->cart) {
+            WC()->cart->empty_cart();
+        }
     }
 
     public function webhook()
@@ -343,7 +348,9 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         $data = json_decode(file_get_contents('php://input'), true);
 
         // Logger
-        wc_get_logger()->info('GoCuotas: Webhook recibido - ' . print_r($data, true), array('source' => 'gocuotas'));
+        if (get_option('woocommerce_gocuotas_settings', true)['logg'] == 'yes') {
+            wc_get_logger()->info('GoCuotas: Webhook recibido - ' . print_r($data, true), array('source' => 'gocuotas'));
+        }
 
         $order = wc_get_order($data['order_reference_id']);
 
@@ -357,7 +364,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
         if (in_array($order->get_status(), $status)) return;
 
         if ($data['status'] != 'approved') {
-            $message = "Go Cuotas: ERROR EN PAGO, DENEGADO. IPN<br /> Más información <a href='{$dataLog}' target='_blank'>Ver Log</a>";
+            $message = "Go Cuotas: ERROR EN PAGO, DENEGADO. IPN<br /> Ver log de WooCommerce para más detalles.";
             $order->update_status('failed');
             $order->add_order_note($message);
 
@@ -372,13 +379,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
 
     private function endpointURL()
     {
-        if ($this->sandbox == 'yes') {
-            $endpoint = 'https://sandbox.gocuotas.com';
-        } else {
-            $endpoint = 'https://www.gocuotas.com';
-        }
-
-        return $endpoint;
+        return $this->sandbox == 'yes' ? 'https://sandbox.gocuotas.com' : 'https://www.gocuotas.com';
     }
 
     private function setToken($endpoint, $email, $password)
