@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: Go Cuotas
- * Version: 1.3.3.5
+ * Version: 1.6.0.0
  * Author: Juan Iriart
  * Text Domain: gocuotas
  * Description: Plugin para integración de Go Cuotas en WooCommerce
