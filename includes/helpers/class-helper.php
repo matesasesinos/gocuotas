@@ -20,12 +20,6 @@ class GoCuotas_Helper
         return self::$instance;
     }
 
-    //logger
-    public static function go_log($log, $save)
-    {
-        file_put_contents(WC_GoCuotas::plugin_abspath() . 'info/'. $log, json_encode($save) . "\n", FILE_APPEND);
-    }
-
     public function uploadIcon()
     {
         if (isset($_FILES['woocommerce_gocuotas_iconfile']) && $_FILES['woocommerce_gocuotas_iconfile']['size'] > 0) {
@@ -68,7 +62,7 @@ class GoCuotas_Helper
 
     private function show_logo()
     {
-        if(get_option('woocommerce_gocuotas_settings', true)['show_icons'] === 'yes' && (is_product() || is_checkout())) {
+        if (get_option('woocommerce_gocuotas_settings', true)['show_icons'] === 'yes' && (is_product() || is_checkout())) {
             return ' <a id="fee" href="https://www.gocuotas.com" target="_blank"><img style="max-height: 35px;" src="' . get_option('go_cuotas_icon', WC_GoCuotas::plugin_url() . '/logo.png') . '"> </a>';
         }
 
@@ -89,28 +83,28 @@ class GoCuotas_Helper
             $cuota = number_format($cuota, 2, '.', ',');
             $new_price =  $price;
             return $new_price;
-        } 
+        }
 
         if ($product->is_type('simple')) {
             $cuota = $sale_price ? $sale_price / get_option('woocommerce_gocuotas_settings', true)['fees_number'] : $regular_price / get_option('woocommerce_gocuotas_settings', true)['fees_number'];
             $cuota = number_format($cuota, 2, '.', ',');
             $new_price = $price . '<span class="custom-price-prefix singlefee">' . get_option('woocommerce_gocuotas_settings', true)['fees_text'] . ' $' . $cuota  . $this->show_logo() . '</span>';
             return $new_price;
-        } 
+        }
     }
 
     public function show_fees_product($price, $product)
-    { 
+    {
         if (is_admin()) return $price;
 
-        if(get_option('woocommerce_gocuotas_settings', true)['enabled'] == 'no') return $price;  
+        if (get_option('woocommerce_gocuotas_settings', true)['enabled'] == 'no') return $price;
 
         $p = wc_get_product($product->get_id());
 
-        if(get_option('woocommerce_gocuotas_settings', true)['max_total'] < $p->get_price() && get_option('woocommerce_gocuotas_settings', true)['max_total']!= '') return $price;
-        
+        if (get_option('woocommerce_gocuotas_settings', true)['max_total'] < $p->get_price() && get_option('woocommerce_gocuotas_settings', true)['max_total'] != '') return $price;
+
         if (get_option('woocommerce_gocuotas_settings', true)['show_fees_product'] == 'yes' && is_product()) {
-            
+
             return $this->fees($price, $product->get_id());
         }
 
