@@ -1,9 +1,11 @@
 <?php
 
 /**
- * Plugin Name: Go Cuotas
+ * Plugin Name: GoCuotas
  * Version: 1.6.0.0
- * Author: Juan Iriart
+ * Author: GoCuotas
+ * Author URI: https://gocuotas.com
+ * Plugin URI: https://docs.google.com/document/d/1B9jeOPo05W_yysJDf2cJH5Idmtv_jmddu40aONwYdTg/edit?tab=t.0
  * Text Domain: gocuotas
  * Description: Plugin para integración de Go Cuotas en WooCommerce
  */
