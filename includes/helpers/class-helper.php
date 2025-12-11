@@ -72,13 +72,14 @@ class GoCuotas_Helper
 
     public function fees($price, $product_id)
     {
-
         $product = wc_get_product($product_id);
         $sale_price = $product->get_sale_price();
         $regular_price = $product->get_regular_price();
 
         if ($product->is_type('variable')) {
             $precio = $product->get_price();
+            if (!$precio) return $price;
+
             $cuota = $precio / get_option('woocommerce_gocuotas_settings', true)['fees_number'];
             $cuota = number_format($cuota, 2, '.', ',');
             $new_price =  $price;
@@ -86,6 +87,8 @@ class GoCuotas_Helper
         }
 
         if ($product->is_type('simple')) {
+            if (!$regular_price) return $price;
+
             $cuota = $sale_price ? $sale_price / get_option('woocommerce_gocuotas_settings', true)['fees_number'] : $regular_price / get_option('woocommerce_gocuotas_settings', true)['fees_number'];
             $cuota = number_format($cuota, 2, '.', ',');
             $new_price = $price . '<span class="custom-price-prefix singlefee">' . get_option('woocommerce_gocuotas_settings', true)['fees_text'] . ' $' . $cuota  . $this->show_logo() . '</span>';
