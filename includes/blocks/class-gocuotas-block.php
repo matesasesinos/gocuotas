@@ -53,6 +53,7 @@ class WC_GoCuotas_Block_Support extends AbstractPaymentMethodType
 		return [
 			'title'       => $this->get_setting('title'),
 			'description' => $this->get_setting('description'),
+			'icon'        => $this->gateway->icon,
 			'supports'    => array_filter($this->gateway->supports, [$this->gateway, 'supports'])
 		];
 	}

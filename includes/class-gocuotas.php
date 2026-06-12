@@ -120,7 +120,7 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'title'       => 'Icono',
                 'label'       => 'Icono a mostrar',
                 'type'        => 'file',
-                'description' => 'Icono que se mostrara en el producto y al finalizar la compra. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon', WC_GoCuotas::plugin_url() . '/logo.png') . '" style="max-width:100px" />',
+                'description' => 'Icono que se mostrara en el producto y al finalizar la compra. Formato ".png". Ancho máximo de 100px. Peso máximo de 100kb. <br />Actual<br /> <img src="' . get_option('go_cuotas_icon', WC_GoCuotas::plugin_url() . '/logo.png') . '" style="max-width:100px" />',
                 'default'     => get_option('go_cuotas_icon', WC_GoCuotas::plugin_url() . '/logo.png'),
             ],
             'show_icons' => [
@@ -145,6 +145,15 @@ class WC_Gateway_GoCuotas extends WC_Payment_Gateway
                 'default'     => 'no'
             ],
         );
+    }
+
+    public function get_icon()
+    {
+        if (is_admin()) {
+            $icon_url = WC_GoCuotas::plugin_url() . '/logo.png';
+            return '<img src="' . esc_attr($icon_url) . '" alt="' . esc_attr($this->get_title()) . '" />';
+        }
+        return parent::get_icon();
     }
 
     public function admin_options()
